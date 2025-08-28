@@ -1,12 +1,15 @@
 <?php
 include 'db.php';
+$meta_head = "Add Update Class";
 
-// Check if user is logged in
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
     exit();
 }
-
 $class_name = $class_short = $class_status = "";
 $update = false;
 
@@ -77,7 +80,7 @@ include 'navigation.php';
 							
 							
 							<select name="session_id" id="session_id" required class="form-select" >
-    <option value="">Select Session</option>
+    <option value="">Select Batch</option>
     <?php while($row = mysqli_fetch_assoc($sessions_result)) {
 				$selected = '';
 				if($class_session_id == $row['session_id'])

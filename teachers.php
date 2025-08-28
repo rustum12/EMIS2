@@ -1,12 +1,15 @@
 <?php 
 include 'db.php';
+$meta_head = "Manage Teachers";
 
-// Check if user is logged in
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
     exit();
 }
-
  
 
 // Fetch teachers from database

@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 // Include necessary files if required (e.g., database connection, session handling)
+$meta_head = "Welcome to EMIS";
 
 
 /////////// Logging Out Starts

@@ -1,14 +1,16 @@
 <?php 
 include 'db.php';
-
-// Check if user is logged in
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
-    exit();
-}
-
+$meta_head = "View Teacher Class";
  
 
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
+    exit();
+}
 // Fetch teacher-class assignments
 $query = "
     SELECT 

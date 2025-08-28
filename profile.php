@@ -1,5 +1,6 @@
 <?php
 include 'db.php';
+$meta_head = "Update Profile";
 
 // Check if user is logged in
 if (!isset($_SESSION['userid'])) {
@@ -17,7 +18,7 @@ $user = [
 ];
 $isEdit = false;
 $myID	=	$_SESSION['userid'];
- 
+  
 // If editing
      $id = $myID;
     $query = "SELECT * FROM users WHERE uid = $id";

@@ -1,5 +1,7 @@
 <?php 
 include('db.php');
+$meta_head = "Add Update Teacher";
+
 $message = '';
 $editing = false;
  
@@ -12,8 +14,12 @@ $student = [
 ];
 
 // Login check
-if (!isset($_SESSION['userid'])) {
-    header("Location: login.php");
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
     exit();
 }
 
@@ -129,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
-$sessions_result = mysqli_query($conn, "SELECT * FROM sessions");
+$sessions_result = mysqli_query($conn, "SELECT * FROM sessions where status='active'");
 $classes_result2 = mysqli_query($conn, "SELECT * FROM classes WHERE session_id = '{$student['session_id']}'");
 include 'header.php';
 include 'navigation.php';

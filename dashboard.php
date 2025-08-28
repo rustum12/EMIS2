@@ -1,11 +1,12 @@
-<?php
+ 	<?php
 include 'db.php';
+$meta_head = "Dashboard";
 
-// Check if user is logged in
-if (!isset($_SESSION['userid'])) {
-    header("Location: login.php");
-    exit();
-}
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+ 
   
 
 include 'header.php';

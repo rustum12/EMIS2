@@ -1,15 +1,37 @@
 <?php
 include('db.php');
 $message = '';
+$meta_head = "Add update Teacher";
 
-// Check login
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin' and $_SESSION['urole'] != 'Teacher') {
+    header("Location: index.php?action=logout");
     exit();
 }
 
 // Initialize variables
-$teacher_id = 0;
+if($_SESSION['urole'] == 'Teacher'){
+	$CNIC	=	$_SESSION['CNIC'];
+    // Check for duplicate CNIC
+    $getTID = mysqli_query($conn, "SELECT * FROM teachers WHERE cnic = '$CNIC'");
+    if (mysqli_num_rows($getTID) > 0) {
+		
+		 // Fetch the teacher_id
+        $row = mysqli_fetch_assoc($getTID);
+        $teacher_id = $row['teacher_id'];
+        
+    }
+	else
+		exit("<h1>Dear User Your Role is Teacher but Admin has not created your Teacher Profile</h1>");
+
+}
+else
+	$teacher_id = 0;
+	
+	
 $teacher_name = "";
 $cnic = "";
 $photo = "";
@@ -21,7 +43,7 @@ $subject = "";
 $job_nature = "Contract";
 $joining = "";
 $job_status = "Active";
-$status = 1;
+ 
 $update = false;
 
 // Save Teacher (for adding new teacher)
@@ -51,14 +73,15 @@ if (isset($_POST['save'])) {
     }
 
     // Insert new teacher
-    $query = "INSERT INTO teachers (teacher_name, cnic, photo, designation, highest_qualification, bps, department, subject, job_nature, joining, job_status, status) 
-              VALUES ('$teacher_name', '$cnic', '$photo', '$designation', '$highest_qualification', '$bps', '$department', '$subject', '$job_nature', '$joining', '$job_status', '$status')";
+    $query = "INSERT INTO teachers (teacher_name, cnic, photo, designation, highest_qualification, bps, department, subject, job_nature, joining, job_status) 
+              VALUES ('$teacher_name', '$cnic', '$photo', '$designation', '$highest_qualification', '$bps', '$department', '$subject', '$job_nature', '$joining', '$job_status')";
     mysqli_query($conn, $query);
 
     // Redirect to the edit mode to update details
     $teacher_id = mysqli_insert_id($conn); // Get the last inserted teacher's ID
-    header('Location: teacher.php?id=' . $teacher_id);
-    exit();
+    //header('Location: teacher.php?id=' . $teacher_id);
+    //exit();
+	 $message .= "Record Inserted Successfully";
 }
 
 // Update Teacher (when editing)
@@ -112,14 +135,29 @@ if (isset($_POST['update'])) {
               WHERE teacher_id = '$teacher_id'";
     mysqli_query($conn, $query);
 
-    header('Location: teacher.php?id=' . $teacher_id);
-    exit();
+	 $message .= "Record updated Successfully";
 }
 
 // Fetch teacher data for editing
-if (isset($_GET['id'])) {
+$update = false;
+
+if (isset($_GET['id']) && $_SESSION['urole'] == 'Admin') {
     $teacher_id = $_GET['id'];
     $update = true;
+} elseif ($_SESSION['urole'] == 'Teacher') {
+    $CNIC = $_SESSION['CNIC'];
+    // Get teacher_id for logged-in teacher
+    $getTID = mysqli_query($conn, "SELECT teacher_id FROM teachers WHERE cnic = '$CNIC'");
+    if (mysqli_num_rows($getTID) > 0) {
+        $row = mysqli_fetch_assoc($getTID);
+        $teacher_id = $row['teacher_id'];
+        $update = true;
+    } else {
+        exit("<h1>Dear User, your role is Teacher but Admin has not created your Teacher Profile</h1>");
+    }
+}
+
+if ($update) {
     $result = mysqli_query($conn, "SELECT * FROM teachers WHERE teacher_id = '$teacher_id'");
 
     if (mysqli_num_rows($result) == 1) {
@@ -137,6 +175,7 @@ if (isset($_GET['id'])) {
         $job_status = $row['job_status'];
     }
 }
+
 
 include 'header.php';
 include 'navigation.php';
@@ -218,9 +257,17 @@ include 'navigation.php';
                             <td><label>Joining Date:</label></td>
                             <td><input type="date" name="joining" value="<?php echo $joining; ?>" required></td>
                         </tr>
+						
                         <tr>
                             <td><label>Job Status:</label></td>
                             <td>
+							<?php
+							if ($_SESSION['urole'] == 'Teacher') {
+    echo $job_status;
+    echo '<input type="hidden" name="job_status" value="' . htmlspecialchars($job_status) . '">';
+}
+							else{
+						?>
                                 <select name="job_status">
                                     <option value="Active" <?php if ($job_status == 'Active') echo 'selected'; ?>>Active</option>
                                     <option value="Resigned" <?php if ($job_status == 'Resigned') echo 'selected'; ?>>Resigned</option>
@@ -228,6 +275,9 @@ include 'navigation.php';
                                     <option value="Suspended" <?php if ($job_status == 'Suspended') echo 'selected'; ?>>Suspended</option>
                                 </select>
                             </td>
+								<?php
+							}
+						?>
                         </tr>
                     </table><br>
 

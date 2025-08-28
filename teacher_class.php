@@ -1,9 +1,12 @@
 <?php 
 include 'db.php';
+$meta_head = "Teacher Class";
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
 
-// Check if user is logged in
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
     exit();
 }
 
@@ -48,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['assign_classes'])) {
 }
 
 // === Fetch Teachers & Sessions for dropdowns ===
-$teachers = $conn->query("SELECT teacher_id, teacher_name FROM teachers WHERE status=0");
+$teachers = $conn->query("SELECT teacher_id, teacher_name FROM teachers");
 $sessions = $conn->query("SELECT session_id, session_name FROM sessions WHERE status='active'");
 include 'header.php';
 include 'navigation.php';
@@ -82,7 +85,7 @@ include 'navigation.php';
             <div class="col-md-6">
                 <label>Batch</label>
                 <select name="session_id" id="session_id" class="form-control" required>
-                    <option value="">Select Session</option>
+                    <option value="">Select Batch</option>
                     <?php while($row = $sessions->fetch_assoc()): ?>
                         <option value="<?= $row['session_id'] ?>"><?= htmlspecialchars($row['session_name']) ?></option>
                     <?php endwhile; ?>

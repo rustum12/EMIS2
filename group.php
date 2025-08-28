@@ -1,6 +1,6 @@
 <?php
 include 'db.php';
-$meta_head = "Add Update Batch";
+$meta_head = "Add Update Group";
 
 if (isset($_SESSION['userid']))
 	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
@@ -10,42 +10,39 @@ if ($_SESSION['urole'] != 'Admin') {
     header("Location: index.php?action=logout");
     exit();
 }
- // Initialize variables
-$session_name = "";
-$starting_date = "";
+
+// Initialize variables
+$gname = "";
 $status = "active";
-$remarks = "";
 $id = 0;
 $error = "";
 
 // If form submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $session_name = trim($_POST['session_name']);
-    $starting_date = $_POST['starting_date'];
+    $gname = trim($_POST['gname']);
     $status = $_POST['status'];
-    $remarks = $_POST['remarks'];
     $id = intval($_POST['id']);
 
-    // Check for duplicate session_name (excluding current record if updating)
-    $stmt = $conn->prepare("SELECT session_id FROM sessions WHERE session_name = ? AND session_id != ?");
-    $stmt->bind_param("si", $session_name, $id);
+    // Check for duplicate group name (excluding current record if updating)
+    $stmt = $conn->prepare("SELECT gid FROM groups WHERE gname = ? AND gid != ?");
+    $stmt->bind_param("si", $gname, $id);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        $error = "Error: A session with this name already exists.";
+        $error = "Error: A group with this name already exists.";
     } else {
         if ($id > 0) {
             // Update
-            $stmt = $conn->prepare("UPDATE sessions SET session_name=?, starting_date=?, status=?, remarks=? WHERE session_id=?");
-            $stmt->bind_param("ssssi", $session_name, $starting_date, $status, $remarks, $id);
+            $stmt = $conn->prepare("UPDATE groups SET gname=?, status=? WHERE gid=?");
+            $stmt->bind_param("ssi", $gname, $status, $id);
         } else {
             // Insert
-            $stmt = $conn->prepare("INSERT INTO sessions (session_name, starting_date, status, remarks) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $session_name, $starting_date, $status, $remarks);
+            $stmt = $conn->prepare("INSERT INTO groups (gname, status) VALUES (?, ?)");
+            $stmt->bind_param("ss", $gname, $status);
         }
         $stmt->execute();
-        header("Location: batches.php");
+        header("Location: groups.php");
         exit();
     }
 }
@@ -53,15 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // Fetch data for update
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);
-    $stmt = $conn->prepare("SELECT * FROM sessions WHERE session_id = ?");
+    $stmt = $conn->prepare("SELECT * FROM groups WHERE gid = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     $data = $result->fetch_assoc();
-    $session_name = $data['session_name'];
-    $starting_date = $data['starting_date'];
+    $gname = $data['gname'];
     $status = $data['status'];
-    $remarks = $data['remarks'];
 }
 
 include 'header.php';
@@ -75,7 +70,7 @@ include 'navigation.php';
         </div>
         <div class="col-md-9">
             <div class="card p-4">
-                <h2><?= $id ? 'Edit' : 'Add' ?> Batch</h2>
+                <h2><?= $id ? 'Edit' : 'Add' ?> Group</h2>
 
                 <?php if (!empty($error)): ?>
                     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
@@ -85,25 +80,17 @@ include 'navigation.php';
                     <input type="hidden" name="id" value="<?= $id ?>">
                     <table class="table">
                         <tr>
-                            <td><label>Batch:</label></td>
-                            <td><input type="text" name="session_name" value="<?= htmlspecialchars($session_name) ?>" class="form-control" required></td>
-                        </tr>
-                        <tr>
-                            <td><label>Starting Date</label></td>
-                            <td><input type="date" name="starting_date" value="<?= $starting_date ?>" class="form-control" required></td>
+                            <td><label>Group Name:</label></td>
+                            <td><input type="text" name="gname" value="<?= htmlspecialchars($gname) ?>" class="form-control" required></td>
                         </tr>
                         <tr>
                             <td><label>Status</label></td>
                             <td>
                                 <select name="status" class="form-control">
                                     <option value="active" <?= $status == 'active' ? 'selected' : '' ?>>Active</option>
-                                    <option value="completed" <?= $status == 'completed' ? 'selected' : '' ?>>Completed</option>
+                                    <option value="inactive" <?= $status == 'inactive' ? 'selected' : '' ?>>Inactive</option>
                                 </select>
                             </td>
-                        </tr>
-                        <tr>
-                            <td><label>Remarks</label></td>
-                            <td><textarea name="remarks" class="form-control"><?= htmlspecialchars($remarks) ?></textarea></td>
                         </tr>
                         <tr>
                             <td colspan="2" class="text-center">

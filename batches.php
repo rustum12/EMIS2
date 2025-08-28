@@ -1,8 +1,13 @@
 <?php
 include 'db.php';
+$meta_head = "Manage Batches";
 
-if (!isset($_SESSION['userid']) or $_SESSION['urole'] != 'Admin') {
-    header("Location: login.php");
+if (isset($_SESSION['userid']))
+	isLoggedIn ($_SESSION['uemail'], $_SESSION['upassword'],$conn);
+
+
+if ($_SESSION['urole'] != 'Admin') {
+    header("Location: index.php?action=logout");
     exit();
 }
 
@@ -12,7 +17,7 @@ if (isset($_GET['toggle'])) {
     $currentStatus = $_GET['status'] ?? '';
 
     // Toggle logic
-    $newStatus = ($currentStatus === 'active') ? 'inactive' : 'active';
+    $newStatus = ($currentStatus === 'active') ? 'completed' : 'active';
 
     $stmt = $conn->prepare("UPDATE sessions SET status = ? WHERE session_id = ?");
     $stmt->bind_param("si", $newStatus, $id);
@@ -22,7 +27,7 @@ if (isset($_GET['toggle'])) {
 }
 
 // Fetch non-deleted sessions
-$result = $conn->query("SELECT * FROM sessions WHERE status != 'deleted'");
+$result = $conn->query("SELECT * FROM sessions");
 
 include 'header.php';
 include 'navigation.php';
@@ -61,8 +66,8 @@ include 'navigation.php';
                         </td>
                         <td>
                             <a href="batches.php?toggle=<?= $row['session_id'] ?>&status=<?= $row['status'] ?>"
-                               onclick="return confirm('Are you sure you want to <?= $row['status'] === 'active' ? 'inactivate' : 'activate' ?> this session?')">
-                               <?= $row['status'] === 'active' ? 'Inactivate' : 'Activate' ?>
+                               onclick="return confirm('Are you sure you want to <?= $row['status'] === 'active' ? 'complete' : 'activate' ?> this session?')">
+                               <?= $row['status'] === 'active' ? 'Complete' : 'Activate' ?>
                             </a>
                         </td>
                     </tr>

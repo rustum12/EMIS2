@@ -1,10 +1,55 @@
 <?php
 include 'db.php';
-session_start();
+$meta_head = "Attendance";
 
-// Check access
-if (!isset($_SESSION['userid']) || ($_SESSION['urole'] !== 'Admin' && $_SESSION['urole'] !== 'Teacher')) {
-    header("Location: login.php");
+if (!isset($_SESSION['userid']) || $_SESSION['urole'] != 'Teacher') {
+    header("Location: index.php?action=logout");
+    exit();
+}
+
+if (!isset($_GET['class_id']) || !isset($_GET['teacher_id'])) {
+    die("Class ID and Teacher ID are required!");
+}
+
+$class_id   = intval($_GET['class_id']);
+$teacher_id = intval($_GET['teacher_id']);
+
+//  Get attendance date from user OR default to today
+$attendance_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+
+//  Fetch students of this class
+$query  = "SELECT student_id, student_name FROM students WHERE class = $class_id AND status = 'admitted'";
+$result = mysqli_query($conn, $query);
+
+//  Fetch existing attendance for the selected date
+$attendance_data = [];
+$attendance_query = "SELECT student_id, status FROM attendance 
+                     WHERE class_id = $class_id 
+                     AND teacher_id = $teacher_id 
+                     AND attendance_date = '$attendance_date'";
+$attendance_result = mysqli_query($conn, $attendance_query);
+
+if ($attendance_result && mysqli_num_rows($attendance_result) > 0) {
+    while ($row = mysqli_fetch_assoc($attendance_result)) {
+        $attendance_data[$row['student_id']] = $row['status'];
+    }
+    $is_update = true;  // Attendance exists ? Update mode
+} else {
+    $is_update = false; // No attendance ? Mark mode
+}
+
+//  Save or Update Attendance
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    foreach ($_POST['attendance'] as $student_id => $status) {
+        $stmt = $conn->prepare("INSERT INTO attendance (student_id, class_id, teacher_id, attendance_date, status)
+                                VALUES (?, ?, ?, ?, ?)
+                                ON DUPLICATE KEY UPDATE status=?");
+        $stmt->bind_param("iiisss", $student_id, $class_id, $teacher_id, $attendance_date, $status, $status);
+        $stmt->execute();
+    }
+
+    //  Reload the same page with selected date
+    echo "<script>window.location.href='attendance.php?class_id=$class_id&teacher_id=$teacher_id&date=$attendance_date';</script>";
     exit();
 }
 
@@ -19,70 +64,70 @@ include 'navigation.php';
         </div>
         <div class="col-md-9">
             <div class="card p-4">
-                <h4>Mark Attendance</h4>
-                <form method="post" action="save_attendance.php">
-                    <div class="form-group">
-                        <label>Select Class:</label>
-                        <select name="class_id" class="form-control" required>
-                            <option value="">-- Select Class --</option>
-                            <?php
-                            $classes = mysqli_query($conn, "SELECT * FROM classes WHERE class_status = 'active'");
-                            while ($class = mysqli_fetch_assoc($classes)) {
-                                echo "<option value='{$class['CID']}'>{$class['class_name']}</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Select Session:</label>
-                        <select name="session_id" class="form-control" required>
-                            <option value="">-- Select Session --</option>
-                            <?php
-                            $sessions = mysqli_query($conn, "SELECT * FROM sessions WHERE status = 'active'");
-                            while ($session = mysqli_fetch_assoc($sessions)) {
-                                echo "<option value='{$session['session_id']}'>{$session['session_name']}</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
+                <h2><?php echo $is_update ? "Update Attendance" : "Mark Attendance"; ?></h2>
 
-                    <div class="form-group">
-                        <label>Select Date:</label>
-                        <input type="date" name="date" class="form-control" required>
-                    </div>
+                <!--  Date Picker -->
+                <form method="GET" class="mb-3">
+                    <input type="hidden" name="class_id" value="<?php echo $class_id; ?>">
+                    <input type="hidden" name="teacher_id" value="<?php echo $teacher_id; ?>">
 
-                    <div id="student-list-area">
-   						 <h5 class="mt-4">Student List:</h5>
-   						 <p class="text-muted">Please select Class and Session to load students.</p>
-					</div>
-
-
-                    <button type="submit" class="btn btn-primary">Save Attendance</button>
+                    <label for="date"><b>Select Date:</b></label>
+                    <input type="date" id="date" name="date" 
+                           value="<?php echo $attendance_date; ?>" 
+                           onchange="this.form.submit()"
+                           class="form-control"
+                           style="max-width:250px;">
                 </form>
+
+                <!--  Attendance Form -->
+                <form method="POST">
+                    <table border="1" cellpadding="8" class="table table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($row = mysqli_fetch_assoc($result)) { 
+                                $student_id = $row['student_id'];
+                                $status = isset($attendance_data[$student_id]) ? $attendance_data[$student_id] : "Present";
+                            ?>
+                            <tr>
+                                <td><?php echo $student_id; ?></td>
+                                <td><?php echo $row['student_name']; ?></td>
+                                <td>
+                                    <input type="radio" 
+                                           name="attendance[<?php echo $student_id; ?>]" 
+                                           value="Present" 
+                                           <?php echo ($status === "Present") ? "checked" : ""; ?>>
+                                </td>
+                                <td>
+                                    <input type="radio" 
+                                           name="attendance[<?php echo $student_id; ?>]" 
+                                           value="Absent" 
+                                           <?php echo ($status === "Absent") ? "checked" : ""; ?>>
+                                </td>
+                            </tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                    <br>
+
+                    <!--  Dynamic Button Color -->
+                    <button type="submit" 
+                            class="btn <?php echo $is_update ? 'btn-primary' : 'btn-success'; ?>" 
+                            style="font-weight:bold; padding:10px 20px;">
+                        <?php echo $is_update ? "Update Attendance" : "Mark Attendance"; ?>
+                    </button>
+                </form>
+
             </div>
         </div>
     </div>
 </div>
-<!---AJAX for fetching Students Dynamically--->
-<script>
-document.querySelector('select[name="class_id"]').addEventListener('change', fetchStudents);
-document.querySelector('select[name="session_id"]').addEventListener('change', fetchStudents);
-
-function fetchStudents() {
-    const classId = document.querySelector('select[name="class_id"]').value;
-    const sessionId = document.querySelector('select[name="session_id"]').value;
-
-    if (classId && sessionId) {
-        fetch(`fetch_students.php?class_id=${classId}&session_id=${sessionId}`)
-            .then(res => res.text())
-            .then(html => {
-                document.getElementById('student-list-area').innerHTML = html;
-            });
-    } else {
-        document.getElementById('student-list-area').innerHTML = "<p class='text-muted'>Please select Class and Session to load students.</p>";
-    }
-}
-</script>
 
 <?php include 'footer.php'; ?>

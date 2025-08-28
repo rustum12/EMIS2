@@ -2,6 +2,8 @@
 // signup.php - User Signup
 include 'db.php';
 
+$meta_head = "EMIS Signup";
+
 $message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -58,12 +60,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Insert data if validation passes
     if (empty($message)) {
         $hashed_password = password_hash($upassword, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO users (uname, uemail, upassword, status, urole, CNIC) VALUES (?, ?, ?, 'active', ?, ?)";
+		$token = md5(uniqid($uemail, true));
+        $sql = "INSERT INTO users (uname, uemail, upassword, status, urole, CNIC,verification_token) VALUES (?, ?, ?, 'pending', ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssss", $uname, $uemail, $hashed_password, $urole, $CNIC);
-
+        $stmt->bind_param("ssssss", $uname, $uemail, $hashed_password, $urole, $CNIC,$token);
+		
         if ($stmt->execute()) {
             $message = "Signup successful!";
+			$email = $uemail;
+			
+			////////////////////
+			$signUP = true;
+			include 'phpMailSettings.php';
+			////////////////////
+			
+			
+			
         } else {
             $message = "Error: " . $conn->error;
         }
@@ -90,11 +102,16 @@ include 'navigation.php';
                 <form method="POST" action="signup.php">
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="uname" class="form-control" required>
+                        <input type="text" name="uname" class="form-control" required 
+       pattern="^[A-Za-z ]{3,255}$" 
+       title="Please enter only letters (3 to 255 characters)">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" name="uemail" class="form-control" required>
+                        <input type="email" name="uemail" class="form-control" required 
+       pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$"
+       maxlength="255"
+       title="Please enter a valid email address (max 255 characters)">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">CNIC</label>

@@ -1,9 +1,9 @@
 <?php session_start();
 // db.php - Database Connection
-$servername = "fdb1028.awardspace.net";
-$username = "4635387_emis";
-$password = "emis1234";
-$database = "4635387_emis";
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "emis";
 
 $conn = new mysqli($servername, $username, $password, $database);
 
@@ -52,4 +52,49 @@ $q_result = mysqli_query($conn, $q);
 while($qarray = mysqli_fetch_assoc($q_result)) {
 	$session_Array[$qarray['session_id']] =   $qarray['session_name']; 
 }
+
+if (isset($_SESSION['urole'])):
+function isLoggedIn ($uemail, $upassword, $conn){
+      
+    // Validate input
+    if (filter_var($uemail, FILTER_VALIDATE_EMAIL)) {
+    
+        // Check user in DB
+        $sql = "SELECT * FROM users WHERE uemail = ? AND status = 'active'";
+        $stmt = $conn->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("s", $uemail);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+               // exit(  "HELLO" .  $row['upassword']);
+                if ($upassword==$row['upassword']) {
+                    $_SESSION['userid'] = $row['uid'];
+					
+                    $_SESSION['uname'] = $row['uname'];
+                    $_SESSION['uemail'] = $row['uemail'];
+                    $_SESSION['upassword'] = $row['upassword'];
+                    $_SESSION['urole'] = $row['urole'];
+                    $_SESSION['CNIC'] = $row['CNIC'];
+                    
+                } else {
+                    header("Location: index.php?action=logout");
+                    exit();
+                }
+            } else {
+               header("Location: index.php?action=logout");
+                    exit();
+            }
+        } else {
+            header("Location: index.php?action=logout");
+                    exit();
+        }
+    }else {
+            header("Location: index.php?action=logout");
+                    exit();
+        }
+}
+endif;
 ?>

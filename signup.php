@@ -125,9 +125,9 @@ include 'navigation.php';
                         <label class="form-label">Role</label>
                         <select name="urole" class="form-select" required>
                             <option value="">Select Role</option>
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="parent">Parent</option>
+                            <option value="Student">Student</option>
+                            <option value="Teacher">Teacher</option>
+                            <option value="Parents">Parent</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Signup</button>

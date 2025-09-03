@@ -1,29 +1,35 @@
-<?php 
-include 'db.php';
+<?php include 'db.php';
+
+// Ensure UTF-8 for output and DB connection
 header('Content-Type: text/html; charset=utf-8');
 if (function_exists('mysqli_set_charset')) {
     mysqli_set_charset($conn, 'utf8mb4');
 }
+
 $meta_head = "Monthly Attendance Report";
 
-if (!isset($_SESSION['userid']) || $_SESSION['urole'] !== 'Teacher') {
+ if (!isset($_SESSION['userid']) || $_SESSION['urole'] !== 'Teacher') {
     header("Location: index.php?action=logout");
     exit();
 }
+
 if (!isset($_GET['class_id']) || !isset($_GET['teacher_id'])) {
     die("Class ID and Teacher ID are required!");
 }
 
 $class_id   = (int) $_GET['class_id'];
 $teacher_id = (int) $_GET['teacher_id'];
+
 $month = isset($_GET['month']) ? (int) $_GET['month'] : (int) date('m');
 $year  = isset($_GET['year'])  ? (int) $_GET['year']  : (int) date('Y');
 
+// Clamp month/year to reasonable ranges
 if ($month < 1 || $month > 12) $month = (int) date('m');
 if ($year < 2000 || $year > 2100) $year = (int) date('Y');
 
 $total_days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
+// Fetch students
 $students_sql = "
     SELECT student_id, student_name
     FROM students
@@ -32,6 +38,7 @@ $students_sql = "
 ";
 $students_result = mysqli_query($conn, $students_sql);
 
+// Fetch attendance for month
 $attendance_sql = "
     SELECT student_id, attendance_date, status
     FROM attendance
@@ -57,55 +64,37 @@ function e(string $s): string {
 }
 ?>
 
-<!-- Custom CSS -->
-<style>
-    body { background:#f5f7fb; font-family: 'Inter', Arial, sans-serif; }
-    h2 { color:#0d6efd; font-weight:600; margin-bottom:1rem; }
-    .card { border-radius:15px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
-    .form-label { font-weight:600; color:#333; }
-    .btn-primary { background:linear-gradient(90deg,#0b5ed7,#0d6efd); border:none; border-radius:8px; padding:6px 16px; }
-    .btn-primary:hover { opacity:0.9; }
-    .table { border-radius:10px; overflow:hidden; }
-    .table thead { background:#0d6efd; color:#fff; }
-    .table td, .table th { text-align:center; vertical-align:middle; }
-    .table td strong { font-weight:600; }
-    .badge-present { background:#198754; color:#fff; padding:3px 6px; border-radius:6px; font-size:0.8rem; }
-    .badge-absent { background:#dc3545; color:#fff; padding:3px 6px; border-radius:6px; font-size:0.8rem; }
-</style>
-
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-3 bg-light p-3 rounded shadow-sm">
+        <div class="col-md-3 bg-light p-3">
             <?php include 'leftbar.php'; ?>
         </div>
         <div class="col-md-9">
             <div class="card p-4">
-                <h2>📊 Monthly Attendance Report</h2>
+                <h2>Monthly Attendance Report</h2>
 
-                <form method="GET" class="mb-4 row g-3">
+                <form method="GET" class="mb-3 d-flex gap-2 align-items-end">
                     <input type="hidden" name="class_id" value="<?php echo $class_id; ?>">
                     <input type="hidden" name="teacher_id" value="<?php echo $teacher_id; ?>">
 
-                    <div class="col-md-3">
+                    <div>
                         <label for="month" class="form-label">Month</label>
-                        <input type="number" id="month" name="month" min="1" max="12" 
-                            value="<?php echo $month; ?>" class="form-control" required>
+                        <input type="number" id="month" name="month" min="1" max="12" value="<?php echo $month; ?>" class="form-control" required>
                     </div>
 
-                    <div class="col-md-3">
+                    <div>
                         <label for="year" class="form-label">Year</label>
-                        <input type="number" id="year" name="year" min="2000" max="2100" 
-                            value="<?php echo $year; ?>" class="form-control" required>
+                        <input type="number" id="year" name="year" min="2000" max="2100" value="<?php echo $year; ?>" class="form-control" required>
                     </div>
 
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">View Report</button>
+                    <div>
+                        <button type="submit" class="btn btn-primary">View Report</button>
                     </div>
                 </form>
 
                 <div style="overflow-x:auto;">
-                    <table class="table table-bordered table-striped">
-                        <thead>
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
                             <tr>
                                 <th>S.No</th>
                                 <th>Student ID</th>
@@ -113,8 +102,8 @@ function e(string $s): string {
                                 <?php for ($d = 1; $d <= $total_days; $d++): ?>
                                     <th><?php echo $d; ?></th>
                                 <?php endfor; ?>
-                                <th>Total Days</th>
-                                <th>Presents</th>
+                                <th>Total Working Days</th>
+                                <th>Total Attendance</th>
                                 <th>%age</th>
                             </tr>
                         </thead>
@@ -129,28 +118,30 @@ function e(string $s): string {
                                     echo "<tr>";
                                     echo "<td>" . $sno++ . "</td>";
                                     echo "<td>" . $student_id . "</td>";
-                                    echo "<td style='font-weight:600'>" . e($student_name) . "</td>";
+                                    echo "<td>" . e($student_name) . "</td>";
 
                                     for ($d = 1; $d <= $total_days; $d++) {
                                         $date = sprintf('%04d-%02d-%02d', $year, $month, $d);
                                         $status = $attendance_data[$student_id][$date] ?? '-';
 
                                         if ($status === 'Present') {
-                                            echo "<td><span class='badge-present'>P</span></td>";
+                                            echo "<td><strong>P</strong></td>";
                                             $total_present++;
                                         } elseif ($status === 'Absent') {
-                                            echo "<td><span class='badge-absent'>A</span></td>";
+                                            echo "<td><strong>A</strong></td>";
                                         } else {
                                             echo "<td>-</td>";
                                         }
                                     }
 
+                                    // If you want to exclude weekends or holidays from total working days,
+                                    // replace $total_days with your computed working-day count.
                                     $total_working_days = $total_days;
                                     $percentage = $total_working_days > 0 ? round(($total_present / $total_working_days) * 100, 2) : 0;
 
                                     echo "<td>" . $total_working_days . "</td>";
                                     echo "<td>" . $total_present . "</td>";
-                                    echo "<td><strong>" . $percentage . "%</strong></td>";
+                                    echo "<td>" . $percentage . "%</td>";
                                     echo "</tr>";
                                 }
                             }

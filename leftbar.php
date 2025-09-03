@@ -29,17 +29,6 @@
             <a href="books.php" class="list-group-item list-group-item-action">
                 <i class="fas fa-book-reader me-2 text-danger"></i>Manage Books
             </a>
-        
-        <?php elseif ($_SESSION['urole'] == 'Principal'): ?>
-            <a href="classes.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-chalkboard me-2 text-danger"></i>Manage Classes
-            </a>
-            <a href="teachers.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-chalkboard-teacher me-2 text-danger"></i>Manage Teachers
-            </a>
-            <a href="students.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-user-graduate me-2 text-danger"></i>Manage Students
-            </a>
 
         <?php elseif ($_SESSION['urole'] == 'Teacher'): ?>
             <a href="teacher.php" class="list-group-item list-group-item-action">
@@ -48,28 +37,26 @@
             <a href="t_teacher_classes.php" class="list-group-item list-group-item-action">
                 <i class="fas fa-list me-2 text-danger"></i>My Classes
             </a>
-            <a href="students.php" class="list-group-item list-group-item-action">
+            <a href="teacherstudents.php" class="list-group-item list-group-item-action">
                 <i class="fas fa-user-graduate me-2 text-danger"></i>My Students
             </a>
-            <a href="books.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-book-reader me-2 text-danger"></i>Books
+            <a href="study_materials.php" class="list-group-item list-group-item-action">
+                <i class="fas fa-book-reader me-2 text-danger"></i>Study Material
             </a>
 
         <?php elseif ($_SESSION['urole'] == 'Student'): ?>
-            <a href="classes.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-chalkboard me-2 text-danger"></i>My Class
+            <a href="student_study_materials.php" class="list-group-item list-group-item-action">
+                <i class="fas fa-chalkboard me-2 text-danger"></i>My Study Materials
             </a>
-            <a href="books.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-book-reader me-2 text-danger"></i>My Books
+            <a href="student_attendance.php" class="list-group-item list-group-item-action">
+                <i class="fas fa-book-reader me-2 text-danger"></i>My Attendance
             </a>
 
-        <?php elseif ($_SESSION['urole'] == 'Parent'): ?>
-            <a href="students.php" class="list-group-item list-group-item-action">
+        <?php elseif ($_SESSION['urole'] == 'Parents'): ?>
+            <a href="parents-students.php" class="list-group-item list-group-item-action">
                 <i class="fas fa-user-graduate me-2 text-danger"></i>My Children
             </a>
-            <a href="classes.php" class="list-group-item list-group-item-action">
-                <i class="fas fa-chalkboard me-2 text-danger"></i>Children Classes
-            </a>
+            
 
         <?php endif; ?>
 

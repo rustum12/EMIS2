@@ -10,14 +10,13 @@
 				$mail->isSMTP();
 				$mail->Host       = 'smtp.gmail.com';   // Gmail SMTP server
 				$mail->SMTPAuth   = true;
-				$mail->Username   = 'ra7527753@gmail.com
-';  // your Gmail address
-				$mail->Password   = 'qiio tmty kelu pgfe';    // Gmail App Password
+				$mail->Username   = 'abc@gmail.com';  // your Gmail address
+				$mail->Password   = '';    // Gmail App Password
 				$mail->SMTPSecure = 'tls'; 
 				$mail->Port       = 587;
-				$server	=	'http://localhost/emis/';
+				$server	=	'http://localhost/lms/';
 				// Recipients
-				$mail->setFrom($email, 'Emis System');
+				$mail->setFrom($email, 'LMS System');
 				$mail->addAddress($email); // the email entered in forgot password form
 				$forgotPassword = isset($forgotPassword) && $forgotPassword ? $forgotPassword : false;
 				$signUP = isset($signUP) && $signUP ? $signUP : false;

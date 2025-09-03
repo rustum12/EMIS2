@@ -50,18 +50,18 @@ include 'navigation.php';
 				echo $loggedoutMessage;
 			}
 	   ?>
-        <h1>Welcome to the Learning Management System (LMS)</h1>
-        <p>The Learning Management System (LMS) is designed to streamline the management of educational institutions. It provides administrators, teachers, students, and parents with a centralized platform to manage attendance, track performance, schedule classes, and facilitate communication.</p>
-        <p>Our LMS aims to improve the learning experience by offering real-time updates, efficient resource management, and seamless interaction between all stakeholders. With user-friendly dashboards and automated processes, schools can enhance productivity and focus more on education.</p>
-        <p>Key Features of the LMS include:</p>
+        <h1>Welcome to the Education Management Information System (EMIS)</h1>
+        <p>The Education Management Information System (EMIS) is made to make college management easier. It gives one place where  teachers, students, and parents can manage attendance, check student progress, and see class schedules.</p>
+        <p>Our EMIS System is made to make learning better. It gives quick updates, helps colleges use resources properly, and makes communication easy between teachers, students, parents, and admins. With simple dashboards and automatic work, schools can save time and focus more on teaching.</p>
+        <p>Key Features of the EMIS include:</p>
         <ul>
             <li>Automated attendance tracking</li>
-            <li>Performance and grade management</li>
-            <li>Class scheduling and event management</li>
-            <li>Parent-teacher communication system</li>
+            <li>Manage teachers, students.</li>
+            <li>Class scheduling and  management</li>
+            <li>Manage student attendance (present, absent, on leave).</li>
             <li>Secure and scalable database for storing academic records</li>
         </ul>
-        <p>Explore the system and discover how it can revolutionize school management and enhance the overall learning experience!</p>
+        <p>Explore the system and discover how it can revolutionize college management and enhance the overall learning experience!</p>
         </div>
             </div>
         </div>

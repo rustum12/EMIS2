@@ -1,4 +1,6 @@
-<?php include 'db.php';
+<?php
+include 'db.php';
+
 
 // Ensure UTF-8 for output and DB connection
 header('Content-Type: text/html; charset=utf-8');
@@ -8,7 +10,7 @@ if (function_exists('mysqli_set_charset')) {
 
 $meta_head = "Monthly Attendance Report";
 
- if (!isset($_SESSION['userid']) || $_SESSION['urole'] !== 'Teacher') {
+if (!isset($_SESSION['userid']) || $_SESSION['urole'] !== 'Teacher') {
     header("Location: index.php?action=logout");
     exit();
 }
@@ -20,16 +22,37 @@ if (!isset($_GET['class_id']) || !isset($_GET['teacher_id'])) {
 $class_id   = (int) $_GET['class_id'];
 $teacher_id = (int) $_GET['teacher_id'];
 
-$month = isset($_GET['month']) ? (int) $_GET['month'] : (int) date('m');
-$year  = isset($_GET['year'])  ? (int) $_GET['year']  : (int) date('Y');
+// month-year input
+if (isset($_GET['month_year'])) {
+    [$year, $month] = explode('-', $_GET['month_year']);
+    $year  = (int)$year;
+    $month = (int)$month;
+} else {
+    $year  = (int)date('Y');
+    $month = (int)date('m');
+}
 
 // Clamp month/year to reasonable ranges
 if ($month < 1 || $month > 12) $month = (int) date('m');
 if ($year < 2000 || $year > 2100) $year = (int) date('Y');
 
 $total_days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+$today = date('Y-m-d');
 
-// Fetch students
+// --- Build working days (exclude Sat & Sun, stop at today) ---
+$working_days = [];
+for ($d = 1; $d <= $total_days; $d++) {
+    $date = sprintf('%04d-%02d-%02d', $year, $month, $d);
+
+    if ($date > $today) break; // don’t count future dates
+
+    $dayOfWeek = date('N', strtotime($date)); // 1=Mon ... 7=Sun
+    if ($dayOfWeek == 6 || $dayOfWeek == 7) continue; // skip Sat & Sun
+
+    $working_days[] = $date;
+}
+
+// --- Fetch students ---
 $students_sql = "
     SELECT student_id, student_name
     FROM students
@@ -38,7 +61,7 @@ $students_sql = "
 ";
 $students_result = mysqli_query($conn, $students_sql);
 
-// Fetch attendance for month
+// --- Fetch attendance ---
 $attendance_sql = "
     SELECT student_id, attendance_date, status
     FROM attendance
@@ -78,13 +101,11 @@ function e(string $s): string {
                     <input type="hidden" name="teacher_id" value="<?php echo $teacher_id; ?>">
 
                     <div>
-                        <label for="month" class="form-label">Month</label>
-                        <input type="number" id="month" name="month" min="1" max="12" value="<?php echo $month; ?>" class="form-control" required>
-                    </div>
-
-                    <div>
-                        <label for="year" class="form-label">Year</label>
-                        <input type="number" id="year" name="year" min="2000" max="2100" value="<?php echo $year; ?>" class="form-control" required>
+                        <label for="month_year" class="form-label">Month & Year</label>
+                        <input type="month" id="month_year" name="month_year"
+                               max="<?php echo date('Y-m'); ?>"
+                               value="<?php echo sprintf('%04d-%02d', $year, $month); ?>"
+                               class="form-control" required>
                     </div>
 
                     <div>
@@ -99,9 +120,9 @@ function e(string $s): string {
                                 <th>S.No</th>
                                 <th>Student ID</th>
                                 <th>Student Name</th>
-                                <?php for ($d = 1; $d <= $total_days; $d++): ?>
-                                    <th><?php echo $d; ?></th>
-                                <?php endfor; ?>
+                                <?php foreach ($working_days as $date): ?>
+                                    <th><?php echo date('j', strtotime($date)); ?></th>
+                                <?php endforeach; ?>
                                 <th>Total Working Days</th>
                                 <th>Total Attendance</th>
                                 <th>%age</th>
@@ -115,13 +136,13 @@ function e(string $s): string {
                                     $student_id = (int)$row['student_id'];
                                     $student_name = $row['student_name'];
                                     $total_present = 0;
+
                                     echo "<tr>";
                                     echo "<td>" . $sno++ . "</td>";
                                     echo "<td>" . $student_id . "</td>";
                                     echo "<td>" . e($student_name) . "</td>";
 
-                                    for ($d = 1; $d <= $total_days; $d++) {
-                                        $date = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                                    foreach ($working_days as $date) {
                                         $status = $attendance_data[$student_id][$date] ?? '-';
 
                                         if ($status === 'Present') {
@@ -134,10 +155,10 @@ function e(string $s): string {
                                         }
                                     }
 
-                                    // If you want to exclude weekends or holidays from total working days,
-                                    // replace $total_days with your computed working-day count.
-                                    $total_working_days = $total_days;
-                                    $percentage = $total_working_days > 0 ? round(($total_present / $total_working_days) * 100, 2) : 0;
+                                    $total_working_days = count($working_days);
+                                    $percentage = $total_working_days > 0
+                                        ? round(($total_present / $total_working_days) * 100, 2)
+                                        : 0;
 
                                     echo "<td>" . $total_working_days . "</td>";
                                     echo "<td>" . $total_present . "</td>";
